@@ -90,3 +90,82 @@ Ten system umożliwia użytkownikom przesyłanie wielu plików audio (MP3), tran
 - Dify akceptuje tylko odpowiednio sformatowane dokumenty `.docx`
 
 ---
+# 🇵🇱 Instrukcja – Konfiguracja Kluczy API (OpenAI i Dify)
+
+Ten dokument opisuje, jak uzyskać wymagane dane konfiguracyjne do uruchomienia systemu transkrypcji i tłumaczeń.
+
+---
+
+## 🔑 1. Klucz API OpenAI (`OPEN_AI_API_KEY`)
+
+1. Wejdź na stronę: [https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys)
+2. Kliknij “Create new secret key”
+3. Skopiuj wygenerowany klucz (zaczyna się od `sk-`)
+4. Wklej go do pliku `.env`:
+
+```
+OPEN_AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+---
+
+## 📄 2. Informacje z Dify
+
+### A. Uzyskanie `DIFY_DATASET_ID`
+
+1. Przejdź do swojego Dify: `https://twoj-dify-url.com`
+2. Kliknij w zakładkę “Datasets”
+3. Utwórz nowy dataset lub wybierz istniejący
+4. Przejdź do “Settings” datasetu i skopiuj `Dataset ID`
+5. Dodaj do `.env`:
+
+```
+DIFY_DATASET_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+---
+
+### B. Utworzenie `DIFY_API_KEY`
+
+1. W menu Dify znajdź sekcję “API Keys” (np. w “Team Settings”)
+2. Utwórz nowy klucz z uprawnieniem do przesyłania plików
+3. Skopiuj wygenerowany klucz i dodaj do `.env`:
+
+```
+DIFY_API_KEY=dify-sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+---
+
+### C. Ustawienie `DIFY_API_URL`
+
+1. Bazowy adres twojej instancji Dify to np.:
+
+```
+https://dify.twojadomena.pl
+```
+
+2. Adres API:
+
+```
+https://dify.twojadomena.pl/api/v1
+```
+
+3. Dodaj do `.env`:
+
+```
+DIFY_API_URL=https://dify.twojadomena.pl/api/v1
+```
+
+---
+
+## ✅ Przykładowy plik `.env`
+
+```
+OPEN_AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+DIFY_API_KEY=dify-sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+DIFY_API_URL=https://dify.twojadomena.pl/api/v1
+DIFY_DATASET_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+Zachowaj plik `.env` w głównym folderze projektu (na tym samym poziomie co `app.py`).
