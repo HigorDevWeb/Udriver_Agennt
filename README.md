@@ -1,88 +1,92 @@
-🇵🇱 Instrukcja uruchomienia systemu transkrypcji i tłumaczenia audio
-Ten system umożliwia użytkownikowi przesyłanie wielu plików audio (MP3), ich transkrypcję za pomocą OpenAI Whisper, tłumaczenie transkrypcji na różne języki i wysyłkę wyników do Dify (platformy zarządzania wiedzą).
+# 🇵🇱 Instrukcja Uruchomienia – System Transkrypcji i Tłumaczeń Audio
 
-✅ Wymagania wstępne
-Python 3.10 lub nowszy
+Ten system umożliwia użytkownikom przesyłanie wielu plików audio (MP3), transkrybowanie ich za pomocą OpenAI Whisper, tłumaczenie transkrypcji na wiele języków oraz przesyłanie wyników do platformy Dify.
 
-Node.js (jeśli chcesz używać backendu z frontendem w jednym projekcie)
+---
 
-Wirtualne środowisko Python (venv)
+## ✅ Wymagania
 
-Konto w OpenAI oraz klucz API
+1. Python 3.10 lub nowszy  
+2. Node.js (opcjonalnie – jeśli chcesz integrować z innymi usługami frontendowymi)  
+3. Wirtualne środowisko Pythona (`venv`)  
+4. Konto OpenAI z kluczem API  
+5. Konto Dify z odpowiednio skonfigurowanym datasetem  
 
-Konto w Dify i skonfigurowany dataset
+---
 
-📁 Struktura plików
-bash
-Copy
-Edit
-├── app.py               # Backend Flask – obsługuje transkrypcję, tłumaczenia, upload do Dify
-├── index.html           # Interfejs użytkownika (frontend)
-├── styles.css           # Stylizacja interfejsu
-├── script.js            # Logika frontendowa (upload, drag & drop)
-├── .env                 # Klucze API i konfiguracje środowiskowe
-📦 Instalacja
-Sklonuj repozytorium lub skopiuj pliki
+## 📁 Struktura Plików
 
-Utwórz wirtualne środowisko i aktywuj je:
+```
+├── app.py               # Backend Flask – obsługuje transkrypcję, tłumaczenia i wysyłkę do Dify
+├── index.html           # Interfejs frontendowy
+├── styles.css           # Style interfejsu
+├── script.js            # Logika frontendowa (multi-upload + drag & drop)
+├── .env                 # Klucze API i konfiguracja środowiska
+```
 
-bash
-Copy
-Edit
-python -m venv venv
-source venv/bin/activate   # Linux/macOS
-venv\Scripts\activate.bat  # Windows
-Zainstaluj zależności:
+---
 
-bash
-Copy
-Edit
-pip install -r requirements.txt
-Jeśli nie masz requirements.txt, dodaj:
+## 📦 Instalacja
 
-nginx
-Copy
-Edit
-flask
-flask-cors
-python-dotenv
-requests
-python-docx
-openai
-Uzupełnij plik .env:
+1. **Sklonuj repozytorium lub skopiuj pliki**
+2. **Utwórz i aktywuj środowisko wirtualne**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate   # Linux/macOS
+   venv\Scripts\activate.bat  # Windows
+   ```
 
-ini
-Copy
-Edit
-OPEN_AI_API_KEY=twój_klucz_openai
-DIFY_API_KEY=twój_klucz_dify
-DIFY_API_URL=https://twój.dify.app/api/v1
-DIFY_DATASET_ID=twój_dataset_id
-🚀 Uruchomienie aplikacji
-W terminalu uruchom backend:
+3. **Zainstaluj zależności**:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-bash
-Copy
-Edit
-python app.py
-Otwórz index.html w przeglądarce (np. dwuklik lub serwer lokalny)
+   Jeśli nie masz `requirements.txt`, zainstaluj ręcznie:
+   ```
+   flask
+   flask-cors
+   python-dotenv
+   requests
+   python-docx
+   openai
+   ```
 
-🧪 Jak korzystać
-Przeciągnij i upuść wiele plików MP3 do pola uploadu
+4. **Utwórz i uzupełnij plik `.env`**:
+   ```
+   OPEN_AI_API_KEY=twoj_klucz_openai
+   DIFY_API_KEY=twoj_klucz_dify
+   DIFY_API_URL=https://twoj-dify-url.com/api/v1
+   DIFY_DATASET_ID=twoje_id_datasetu
+   ```
 
-System automatycznie:
+---
 
-Transkrybuje każdy plik
+## 🚀 Uruchomienie Aplikacji
 
-Tłumaczy tekst na: 🇬🇧 angielski, 🇵🇱 polski, 🇺🇦 ukraiński, 🇷🇺 rosyjski
+1. Uruchom backend w terminalu:
+   ```bash
+   python app.py
+   ```
 
-Generuje plik .docx z tłumaczeniami
+2. Otwórz `index.html` w przeglądarce (np. klikając dwukrotnie lub przez lokalny serwer)
 
-Wysyła dokument do Dify
+---
 
-⚠️ Uwagi końcowe
-API OpenAI musi mieć dostęp do modelu whisper-1 oraz gpt-4o
+## 🧪 Jak Używać
 
-Limit tokenów wynosi 2048 – długie transkrypcje mogą być ucinane
+- Przeciągnij i upuść wiele plików `.mp3` na obszar przesyłania
+- System automatycznie:
+  - Transkrybuje każdy plik
+  - Tłumaczy tekst na: 🇬🇧 Angielski, 🇵🇱 Polski, 🇺🇦 Ukraiński, 🇷🇺 Rosyjski
+  - Tworzy dokument `.docx` z tłumaczeniami
+  - Przesyła dokument do Dify
 
-Dify przyjmuje tylko .docx z poprawnym formatowaniem
+---
+
+## ⚠️ Uwagi Końcowe
+
+- Klucz OpenAI musi obsługiwać modele `whisper-1` oraz `gpt-4o`
+- Obowiązuje limit tokenów (2048) – dłuższe transkrypcje mogą być ucięte
+- Dify akceptuje tylko odpowiednio sformatowane dokumenty `.docx`
+
+---
