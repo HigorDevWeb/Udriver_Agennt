@@ -7,7 +7,7 @@ from flask_cors import CORS
 import requests
 from docx import Document
 
-# Carrega variáveis do .env
+# Wczytaj zmienne z pliku .env
 load_dotenv()
 openai.api_key = os.getenv("OPEN_AI_API_KEY")
 DIFY_API_KEY = os.getenv("DIFY_API_KEY")
@@ -17,90 +17,89 @@ DIFY_DATASET_ID = os.getenv("DIFY_DATASET_ID")
 app = Flask(__name__)
 CORS(app)
 
-def traduzir(texto, idioma_destino):
+def tlumacz_tekst(tekst, jezyk_docelowy):
     import openai
     client = openai.OpenAI(api_key=os.getenv("OPEN_AI_API_KEY"))
-    idioma_nome = {
-        "en": "inglês",
-        "pl": "polonês",
-        "uk": "ucraniano",
-        "ru": "russo"
-    }[idioma_destino]
-    chat_response = client.chat.completions.create(
+    nazwy_jezykow = {
+        "en": "angielski",
+        "pl": "polski",
+        "uk": "ukraiński",
+        "ru": "rosyjski"
+    }[jezyk_docelowy]
+    odpowiedz = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": f"Traduza para {idioma_nome} de forma natural e profissional."},
-            {"role": "user", "content": texto}
+            {"role": "system", "content": f"Przetłumacz na język {nazwy_jezykow} w sposób naturalny i profesjonalny."},
+            {"role": "user", "content": tekst}
         ],
         max_tokens=2048,
         temperature=0.1,
     )
-    return chat_response.choices[0].message.content.strip()
+    return odpowiedz.choices[0].message.content.strip()
 
+def generuj_docx(tlumaczenia, nazwa_bazowa):
+    dokument = Document()
+    dokument.add_heading('Transkrypcja Wielojęzyczna', 0)
+    for jezyk, tresc in tlumaczenia.items():
+        dokument.add_heading(jezyk, level=1)
+        dokument.add_paragraph(tresc)
+    nazwa_pliku = f"{nazwa_bazowa}_wielojezyczny.docx"
+    dokument.save(nazwa_pliku)
+    return nazwa_pliku
 
-def gerar_docx(traducoes, filename_base):
-    doc = Document()
-    doc.add_heading('Transcrição Multilíngue', 0)
-    for idioma, texto in traducoes.items():
-        doc.add_heading(idioma, level=1)
-        doc.add_paragraph(texto)
-    nome_arquivo = f"{filename_base}_multilingue.docx"
-    doc.save(nome_arquivo)
-    return nome_arquivo
-
-def enviar_para_dify(nome_arquivo_docx):
+def wyslij_do_dify(nazwa_pliku_docx):
     url = f"{DIFY_API_URL}/datasets/{DIFY_DATASET_ID}/document/create-by-file"
-    headers = {'Authorization': f'Bearer {DIFY_API_KEY}'}
-    data = {'data': '{"indexing_technique":"high_quality","process_rule":{"mode":"automatic"}}'}
-    files = {
-        'file': (nome_arquivo_docx, open(nome_arquivo_docx, 'rb'),
+    naglowki = {'Authorization': f'Bearer {DIFY_API_KEY}'}
+    dane = {'data': '{"indexing_technique":"high_quality","process_rule":{"mode":"automatic"}}'}
+    pliki = {
+        'file': (nazwa_pliku_docx, open(nazwa_pliku_docx, 'rb'),
                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     }
-    resp = requests.post(url, headers=headers, data=data, files=files)
-    return resp.status_code, resp.text
+    odpowiedz = requests.post(url, headers=naglowki, data=dane, files=pliki)
+    return odpowiedz.status_code, odpowiedz.text
 
 @app.route('/transcribe', methods=['POST'])
-def transcribe_audio():
+def transkrybuj_audio():
     if 'file' not in request.files:
-        return jsonify({'error': 'No file part in request'}), 400
+        return jsonify({'error': 'Brak pliku w żądaniu'}), 400
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+    plik = request.files['file']
+    if plik.filename == '':
+        return jsonify({'error': 'Nie wybrano pliku'}), 400
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp:
-        file.save(temp.name)
-        temp_path = temp.name
+        plik.save(temp.name)
+        sciezka_pliku = temp.name
 
     try:
-        with open(temp_path, "rb") as audio_file:
-            transcription = openai.audio.transcriptions.create(
+        with open(sciezka_pliku, "rb") as plik_audio:
+            transkrypcja = openai.audio.transcriptions.create(
                 model="whisper-1",
-                file=audio_file
+                file=plik_audio
             )
-        text = transcription.text
+        tekst = transkrypcja.text
 
-        # Traduzir para 4 idiomas
-        traducoes = {
-            "Português": text,
-            "Inglês": traduzir(text, "en"),
-            "Polonês": traduzir(text, "pl"),
-            "Ucraniano": traduzir(text, "uk"),
-            "Russo": traduzir(text, "ru"),
+        # Tłumaczenie na 4 języki
+        tlumaczenia = {
+            "Portugalski": tekst,
+            "Angielski": tlumacz_tekst(tekst, "en"),
+            "Polski": tlumacz_tekst(tekst, "pl"),
+            "Ukraiński": tlumacz_tekst(tekst, "uk"),
+            "Rosyjski": tlumacz_tekst(tekst, "ru"),
         }
 
-        # Gerar DOCX
-        filename_base = os.path.splitext(file.filename)[0]
-        nome_arquivo_docx = gerar_docx(traducoes, filename_base)
+        # Generowanie dokumentu DOCX
+        nazwa_bazowa = os.path.splitext(plik.filename)[0]
+        nazwa_pliku_docx = generuj_docx(tlumaczenia, nazwa_bazowa)
 
-        # Enviar para o Dify
-        status, resposta = enviar_para_dify(nome_arquivo_docx)
-        print("Envio para Dify:", status, resposta)
+        # Wysłanie dokumentu do Dify
+        status, odpowiedz = wyslij_do_dify(nazwa_pliku_docx)
+        print("Wysłano do Dify:", status, odpowiedz)
 
         return jsonify({
-            'transcription': text,
-            'docx_sent': status == 200,
-            'dify_response': resposta
+            'transkrypcja': tekst,
+            'docx_wyslany': status == 200,
+            'odpowiedz_dify': odpowiedz
         })
 
     except Exception as e:
@@ -108,7 +107,7 @@ def transcribe_audio():
         print(traceback.format_exc())
         return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
     finally:
-        os.remove(temp_path)
+        os.remove(sciezka_pliku)
 
 if __name__ == '__main__':
     app.run(debug=True)
