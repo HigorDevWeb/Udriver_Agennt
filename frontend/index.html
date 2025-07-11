@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Transcrever Áudio - UDriver</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="upload-container">
+    <h2>Transcrever Áudios (Arraste e Solte ou Selecione)</h2>
+    <div id="drop-area">
+      <form id="audioForm" enctype="multipart/form-data">
+        <input type="file" id="fileElem" name="files" multiple accept="audio/*">
+        <label for="fileElem" id="fileLabel">Arraste os arquivos aqui ou clique para selecionar</label>
+        <button type="submit">Enviar</button>
+      </form>
+      <div id="fileList"></div>
+    </div>
+    <div id="resultado"></div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
