@@ -1,23 +1,65 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Transkrypcja Audio - UDriver</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Transcription - UDriver</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="upload-container">
-    <h2>Transkrybuj nagrania (Przeciągnij i upuść lub wybierz)</h2>
-    <div id="drop-area">
-      <form id="audioForm" enctype="multipart/form-data">
-        <input type="file" id="fileElem" name="files" multiple accept="audio/*">
-        <label for="fileElem" id="fileLabel">Przeciągnij pliki tutaj lub kliknij, aby wybrać</label>
-        <button type="submit">Wyślij</button>
-      </form>
-      <div id="fileList"></div>
+  <div class="container">
+    <header>
+      <h1>🎵 Audio Transcription & Translation</h1>
+      <p>Upload audio files and get multilingual transcriptions instantly</p>
+    </header>
+
+    <div class="upload-section">
+      <div id="drop-area" class="drop-area">
+        <div class="drop-icon">📁</div>
+        <h3>Drop your audio files here</h3>
+        <p>or click to browse files</p>
+        <form id="audioForm" enctype="multipart/form-data">
+          <input type="file" id="fileElem" name="files" multiple accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac">
+          <label for="fileElem" class="file-button">Choose Files</label>
+        </form>
+      </div>
+
+      <div id="fileList" class="file-list"></div>
+      
+      <div class="controls" id="controls" style="display: none;">
+        <button id="clearFiles" class="btn-secondary">Clear All</button>
+        <button id="startTranscription" class="btn-primary">Start Transcription</button>
+      </div>
     </div>
-    <div id="resultado"></div>
+
+    <div id="progressSection" class="progress-section" style="display: none;">
+      <div class="progress-header">
+        <h3>Processing Files...</h3>
+        <div class="overall-progress">
+          <div class="progress-bar">
+            <div id="overallProgressBar" class="progress-fill"></div>
+          </div>
+          <span id="progressText">0 / 0 files processed</span>
+        </div>
+      </div>
+      <div id="fileProgress" class="file-progress"></div>
+    </div>
+
+    <div id="results" class="results-section"></div>
+
+    <footer>
+      <p>Powered by OpenAI Whisper & GPT-4 | UDriver System</p>
+    </footer>
   </div>
+
+  <!-- Loading Modal -->
+  <div id="loadingModal" class="modal">
+    <div class="modal-content">
+      <div class="spinner"></div>
+      <p>Processing your audio files...</p>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

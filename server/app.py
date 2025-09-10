@@ -7,7 +7,7 @@ from flask_cors import CORS
 import requests
 from docx import Document
 
-# Wczytaj zmienne z pliku .env
+# Load variables from .env file
 load_dotenv()
 openai.api_key = os.getenv("OPEN_AI_API_KEY")
 DIFY_API_KEY = os.getenv("DIFY_API_KEY")
@@ -17,89 +17,107 @@ DIFY_DATASET_ID = os.getenv("DIFY_DATASET_ID")
 app = Flask(__name__)
 CORS(app)
 
-def tlumacz_tekst(tekst, jezyk_docelowy):
+def translate_text(text, target_language):
     import openai
     client = openai.OpenAI(api_key=os.getenv("OPEN_AI_API_KEY"))
-    nazwy_jezykow = {
-        "en": "angielski",
-        "pl": "polski",
-        "uk": "ukraiński",
-        "ru": "rosyjski"
-    }[jezyk_docelowy]
-    odpowiedz = client.chat.completions.create(
+    language_names = {
+        "en": "English",
+        "pl": "Polish",
+        "uk": "Ukrainian",
+        "ru": "Russian"
+    }[target_language]
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": f"Przetłumacz na język {nazwy_jezykow} w sposób naturalny i profesjonalny."},
-            {"role": "user", "content": tekst}
+            {"role": "system", "content": f"Translate to {language_names} in a natural and professional way."},
+            {"role": "user", "content": text}
         ],
         max_tokens=2048,
         temperature=0.1,
     )
-    return odpowiedz.choices[0].message.content.strip()
+    return response.choices[0].message.content.strip()
 
-def generuj_docx(tlumaczenia, nazwa_bazowa):
-    dokument = Document()
-    dokument.add_heading('Transkrypcja Wielojęzyczna', 0)
-    for jezyk, tresc in tlumaczenia.items():
-        dokument.add_heading(jezyk, level=1)
-        dokument.add_paragraph(tresc)
-    nazwa_pliku = f"{nazwa_bazowa}_wielojezyczny.docx"
-    dokument.save(nazwa_pliku)
-    return nazwa_pliku
+def generate_docx(translations, base_name):
+    document = Document()
+    document.add_heading('Multilingual Transcription', 0)
+    for language, content in translations.items():
+        document.add_heading(language, level=1)
+        document.add_paragraph(content)
+    filename = f"{base_name}_multilingual.docx"
+    document.save(filename)
+    return filename
 
-def wyslij_do_dify(nazwa_pliku_docx):
-    url = f"{DIFY_API_URL}/datasets/{DIFY_DATASET_ID}/document/create-by-file"
-    naglowki = {'Authorization': f'Bearer {DIFY_API_KEY}'}
-    dane = {'data': '{"indexing_technique":"high_quality","process_rule":{"mode":"automatic"}}'}
-    pliki = {
-        'file': (nazwa_pliku_docx, open(nazwa_pliku_docx, 'rb'),
-                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    }
-    odpowiedz = requests.post(url, headers=naglowki, data=dane, files=pliki)
-    return odpowiedz.status_code, odpowiedz.text
+def send_to_dify(docx_filename):
+    url = f"{DIFY_API_URL}/v1/datasets/{DIFY_DATASET_ID}/document/create-by-file"
+    headers = {'Authorization': f'Bearer {DIFY_API_KEY}'}
+    data = {'data': '{"indexing_technique":"high_quality","process_rule":{"mode":"automatic"}}'}
+    
+    print(f"Sending to Dify URL: {url}")
+    print(f"Using API Key: {DIFY_API_KEY[:10]}...")
+    print(f"Dataset ID: {DIFY_DATASET_ID}")
+    
+    try:
+        with open(docx_filename, 'rb') as file_obj:
+            files = {
+                'file': (docx_filename, file_obj, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            }
+            response = requests.post(url, headers=headers, data=data, files=files)
+        return response.status_code, response.text
+    except Exception as e:
+        print(f"Error sending to Dify: {e}")
+        return 500, str(e)
 
 @app.route('/transcribe', methods=['POST'])
-def transkrybuj_audio():
+def transcribe_audio():
     if 'file' not in request.files:
-        return jsonify({'error': 'Brak pliku w żądaniu'}), 400
+        return jsonify({'error': 'No file in request'}), 400
 
-    plik = request.files['file']
-    if plik.filename == '':
-        return jsonify({'error': 'Nie wybrano pliku'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp:
-        plik.save(temp.name)
-        sciezka_pliku = temp.name
+        file.save(temp.name)
+        file_path = temp.name
 
     try:
-        with open(sciezka_pliku, "rb") as plik_audio:
-            transkrypcja = openai.audio.transcriptions.create(
+        with open(file_path, "rb") as audio_file:
+            transcription = openai.audio.transcriptions.create(
                 model="whisper-1",
-                file=plik_audio
+                file=audio_file
             )
-        tekst = transkrypcja.text
+        text = transcription.text
 
-        # Tłumaczenie na 4 języki
-        tlumaczenia = {
-            "Portugalski": tekst,
-            "Angielski": tlumacz_tekst(tekst, "en"),
-            "Polski": tlumacz_tekst(tekst, "pl"),
-            "Ukraiński": tlumacz_tekst(tekst, "uk"),
-            "Rosyjski": tlumacz_tekst(tekst, "ru"),
+        # Translation to 4 languages
+        translations = {
+            "Portuguese": text,
+            "English": translate_text(text, "en"),
+            "Polish": translate_text(text, "pl"),
+            "Ukrainian": translate_text(text, "uk"),
+            "Russian": translate_text(text, "ru"),
         }
 
-        # Generowanie dokumentu DOCX
-        nazwa_bazowa = os.path.splitext(plik.filename)[0]
-        nazwa_pliku_docx = generuj_docx(tlumaczenia, nazwa_bazowa)
+        # Generate DOCX document
+        base_name = os.path.splitext(file.filename)[0]
+        docx_filename = generate_docx(translations, base_name)
 
-        # Wysłanie dokumentu do Dify
-        status, odpowiedz = wyslij_do_dify(nazwa_pliku_docx)
-        print("Wysłano do Dify:", status, odpowiedz)
+        # Send document to Dify
+        status, response = send_to_dify(docx_filename)
+        print(f"Dify Response Status: {status}")
+        print(f"Dify Response: {response}")
+        
+        # Clean up the docx file after sending
+        try:
+            os.remove(docx_filename)
+        except Exception as cleanup_error:
+            print(f"Warning: Could not remove docx file: {cleanup_error}")
 
         return jsonify({
-            'transkrypcja': tekst,
-            'docx_wyslany': status == 200,
-            'odpowiedz_dify': odpowiedz
+            'transcription': text,
+            'translations': translations,
+            'docx_sent': status == 200,
+            'dify_response': response,
+            'dify_status': status
         })
 
     except Exception as e:
@@ -107,7 +125,7 @@ def transkrybuj_audio():
         print(traceback.format_exc())
         return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
     finally:
-        os.remove(sciezka_pliku)
+        os.remove(file_path)
 
 if __name__ == '__main__':
     app.run(debug=True)
